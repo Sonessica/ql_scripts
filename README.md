@@ -69,7 +69,7 @@ node scripts/bootstrap-auth.js
 - `MAJSOUL_INITIAL_LOAD_WAIT_MS`：首页打开后额外等待时间
 - `MAJSOUL_AFTER_START_WAIT_MS`：点击“开始游戏”或进入登录流程后额外等待时间
 - `MAJSOUL_POST_LOGIN_WAIT_MS`：登录提交后，或恢复登录态后，等待进入大厅和自动到账的时间
-- `MAJSOUL_FINAL_STABILIZE_WAIT_MS`：关闭弹窗后，再额外等待页面稳定的时间
+- `MAJSOUL_FINAL_STABILIZE_WAIT_MS`：关闭首屏弹窗后，再额外等待页面稳定的时间
 
 ### 推荐的慢速环境参数
 
@@ -170,6 +170,19 @@ $env:MAJSOUL_ACCOUNT_ALIAS='alt'; node scripts/bootstrap-auth.js
 
 可以用你平时的拉库方式，把这个仓库同步到青龙脚本目录。
 
+如果你是用青龙的“订阅”或“拉库”功能，常见的落地目录一般类似下面两种：
+
+- `/ql/data/repo/<仓库目录名>/`
+- `/ql/data/scripts/<仓库目录名>/`
+
+你可以先在青龙容器里执行一次下面的命令确认真实路径：
+
+```bash
+find /ql -name "claim-monthly-pass.js" 2>/dev/null
+```
+
+后续任务命令里的 `cd` 路径，请以你实际查到的目录为准。
+
 #### 2. 在青龙容器里安装一次依赖
 
 进入仓库目录后执行：
@@ -177,6 +190,12 @@ $env:MAJSOUL_ACCOUNT_ALIAS='alt'; node scripts/bootstrap-auth.js
 ```bash
 npm install
 npx playwright install chromium
+```
+
+如果你已经确认项目目录就是 `/ql/data/scripts/ql_majsoul`，也可以直接执行：
+
+```bash
+cd /ql/data/scripts/ql_majsoul && npm install && npx playwright install chromium
 ```
 
 只需要初始化一次，后面日常跑任务不必每次都装。
