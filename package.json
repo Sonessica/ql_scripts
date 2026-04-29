@@ -1,0 +1,18 @@
+{
+  "name": "ql-majsoul-monthly-pass",
+  "version": "0.1.0",
+  "private": true,
+  "description": "在青龙面板中通过 Playwright 自动登录雀魂网页版并尝试领取月卡奖励",
+  "main": "scripts/claim-monthly-pass.js",
+  "scripts": {
+    "auth:bootstrap": "node scripts/bootstrap-auth.js",
+    "claim": "node scripts/claim-monthly-pass.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "playwright": "^1.53.0"
+  }
+}
