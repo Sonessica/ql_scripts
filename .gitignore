@@ -4,4 +4,5 @@ data/
 screenshots/
 .playwright/
 .playwright-cli/
+.vscode/
 
