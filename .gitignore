@@ -1,0 +1,7 @@
+node_modules/
+.env
+data/
+screenshots/
+.playwright/
+.playwright-cli/
+
