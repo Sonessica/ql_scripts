@@ -1,1 +1,0 @@
-require('./majsoul/bootstrap-auth');

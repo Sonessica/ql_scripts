@@ -1,14 +1,13 @@
 {
   "name": "ql-scripts",
-  "version": "0.2.0",
+  "version": "0.4.0",
   "private": true,
-  "description": "青龙面板自动化脚本集合，当前包含雀魂网页版自动登录与月卡自动领取脚本",
-  "main": "scripts/majsoul/claim-monthly-pass.js",
+  "description": "青龙面板自动化脚本集合，当前提供雀魂与 Poi6 论坛的自动化脚本",
   "scripts": {
     "majsoul:auth": "node scripts/majsoul/bootstrap-auth.js",
     "majsoul:claim": "node scripts/majsoul/claim-monthly-pass.js",
-    "auth:bootstrap": "node scripts/majsoul/bootstrap-auth.js",
-    "claim": "node scripts/majsoul/claim-monthly-pass.js"
+    "poi6:auth": "node scripts/poi6/bootstrap-auth.js",
+    "poi6:checkin": "node scripts/poi6/daily-login.js"
   },
   "engines": {
     "node": ">=18"

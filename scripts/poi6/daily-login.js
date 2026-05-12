@@ -9,19 +9,22 @@ const {
 } = require('../shared/utils');
 
 const ROOT_DIR = path.resolve(__dirname, '..', '..');
-const DATA_DIR = path.join(ROOT_DIR, 'data', 'majsoul');
-const SCREENSHOT_DIR = path.join(ROOT_DIR, 'screenshots', 'majsoul');
-const DEFAULT_STATE_PATH = path.join(DATA_DIR, 'maj-soul-storage.json');
-const DEFAULT_BASE_URL = process.env.MAJSOUL_BASE_URL || 'https://game.maj-soul.com/1/';
-const DEFAULT_HEADLESS = toBoolean(process.env.MAJSOUL_HEADLESS, true);
-const DEFAULT_TIMEOUT_MS = toInt(process.env.MAJSOUL_TIMEOUT_MS, 120000);
-const DEFAULT_HALL_WAIT_MS = toInt(process.env.MAJSOUL_HALL_WAIT_MS, 180000);
-const DEFAULT_STORAGE_STATE_B64 = trimText(process.env.MAJSOUL_STORAGE_STATE_B64);
-const DEFAULT_STORAGE_STATE_PATH = path.resolve(process.env.MAJSOUL_STORAGE_STATE_PATH || DEFAULT_STATE_PATH);
-const DEFAULT_BARK_PUSH_URL = trimText(process.env.MAJSOUL_BARK_PUSH_URL);
-const DEFAULT_BARK_SCREENSHOT_BASE_URL = trimText(process.env.MAJSOUL_BARK_SCREENSHOT_BASE_URL);
-const DEFAULT_BARK_GROUP = trimText(process.env.MAJSOUL_BARK_GROUP) || 'majsoul';
-const CONTINUE_ON_ERROR = toBoolean(process.env.MAJSOUL_CONTINUE_ON_ERROR, true);
+const DATA_DIR = path.join(ROOT_DIR, 'data', 'poi6');
+const SCREENSHOT_DIR = path.join(ROOT_DIR, 'screenshots', 'poi6');
+const DEFAULT_STATE_PATH = path.join(DATA_DIR, 'poi6-storage.json');
+const DEFAULT_BASE_URL = process.env.POI6_BASE_URL || 'https://poi6.net/';
+const DEFAULT_HEADLESS = toBoolean(process.env.POI6_HEADLESS, true);
+const DEFAULT_TIMEOUT_MS = toInt(process.env.POI6_TIMEOUT_MS, 120000);
+const DEFAULT_ONLINE_WAIT_MS = toInt(process.env.POI6_ONLINE_WAIT_MS, 300000);
+const DEFAULT_EMAIL = trimText(process.env.POI6_EMAIL);
+const DEFAULT_PASSWORD = trimText(process.env.POI6_PASSWORD);
+const DEFAULT_REMEMBER_LOGIN = toBoolean(process.env.POI6_REMEMBER_LOGIN, true);
+const DEFAULT_STORAGE_STATE_B64 = trimText(process.env.POI6_STORAGE_STATE_B64);
+const DEFAULT_STORAGE_STATE_PATH = path.resolve(process.env.POI6_STORAGE_STATE_PATH || DEFAULT_STATE_PATH);
+const DEFAULT_BARK_PUSH_URL = trimText(process.env.POI6_BARK_PUSH_URL);
+const DEFAULT_BARK_SCREENSHOT_BASE_URL = trimText(process.env.POI6_BARK_SCREENSHOT_BASE_URL);
+const DEFAULT_BARK_GROUP = trimText(process.env.POI6_BARK_GROUP) || 'poi6';
+const CONTINUE_ON_ERROR = toBoolean(process.env.POI6_CONTINUE_ON_ERROR, true);
 
 function log(message, accountConfig) {
   const now = new Date().toLocaleString('zh-CN', { hour12: false });
@@ -36,7 +39,7 @@ function resolveStorageStatePath(rawPath, profileKey, isMultiMode) {
   }
 
   if (isMultiMode) {
-    return path.join(DATA_DIR, `maj-soul-storage-${profileKey}.json`);
+    return path.join(DATA_DIR, `poi6-storage-${profileKey}.json`);
   }
 
   return DEFAULT_STORAGE_STATE_PATH;
@@ -53,7 +56,10 @@ function normalizeAccountConfig(source, index, isMultiMode) {
     baseUrl: trimText(pickValue(source, ['baseUrl', 'base_url'], DEFAULT_BASE_URL)) || DEFAULT_BASE_URL,
     headless: toBoolean(pickValue(source, ['headless'], DEFAULT_HEADLESS), DEFAULT_HEADLESS),
     timeoutMs: toInt(pickValue(source, ['timeoutMs', 'timeout_ms'], DEFAULT_TIMEOUT_MS), DEFAULT_TIMEOUT_MS),
-    hallWaitMs: toInt(pickValue(source, ['hallWaitMs', 'hall_wait_ms'], DEFAULT_HALL_WAIT_MS), DEFAULT_HALL_WAIT_MS),
+    onlineWaitMs: toInt(pickValue(source, ['onlineWaitMs', 'online_wait_ms'], DEFAULT_ONLINE_WAIT_MS), DEFAULT_ONLINE_WAIT_MS),
+    email: trimText(pickValue(source, ['email', 'account', 'username'], isMultiMode ? '' : DEFAULT_EMAIL)),
+    password: trimText(pickValue(source, ['password'], isMultiMode ? '' : DEFAULT_PASSWORD)),
+    rememberLogin: toBoolean(pickValue(source, ['rememberLogin', 'remember_login'], isMultiMode ? '' : DEFAULT_REMEMBER_LOGIN), DEFAULT_REMEMBER_LOGIN),
     storageStateB64: trimText(
       pickValue(source, ['storageStateB64', 'storage_state_b64', 'storageStateBase64'], isMultiMode ? '' : DEFAULT_STORAGE_STATE_B64)
     ),
@@ -71,7 +77,7 @@ function normalizeAccountConfig(source, index, isMultiMode) {
 }
 
 function loadAccountsConfig() {
-  const raw = trimText(process.env.MAJSOUL_MULTI_ACCOUNTS_JSON);
+  const raw = trimText(process.env.POI6_MULTI_ACCOUNTS_JSON);
   if (!raw) {
     return [normalizeAccountConfig({}, 0, false)];
   }
@@ -80,16 +86,16 @@ function loadAccountsConfig() {
   try {
     parsed = JSON.parse(raw);
   } catch (error) {
-    throw new Error(`MAJSOUL_MULTI_ACCOUNTS_JSON 不是合法 JSON：${error.message}`);
+    throw new Error(`POI6_MULTI_ACCOUNTS_JSON 不是合法 JSON：${error.message}`);
   }
 
   if (!Array.isArray(parsed) || parsed.length === 0) {
-    throw new Error('MAJSOUL_MULTI_ACCOUNTS_JSON 必须是非空数组。');
+    throw new Error('POI6_MULTI_ACCOUNTS_JSON 必须是非空数组。');
   }
 
   return parsed.map((item, index) => {
     if (!item || typeof item !== 'object' || Array.isArray(item)) {
-      throw new Error(`MAJSOUL_MULTI_ACCOUNTS_JSON 第 ${index + 1} 项必须是对象。`);
+      throw new Error(`POI6_MULTI_ACCOUNTS_JSON 第 ${index + 1} 项必须是对象。`);
     }
     return normalizeAccountConfig(item, index, true);
   });
@@ -115,16 +121,70 @@ function prepareStorageState(accountConfig) {
     return accountConfig.storageStatePath;
   }
 
-  throw new Error('未提供可用登录态。请先运行 scripts/majsoul/bootstrap-auth.js 采集 storage state。');
+  return undefined;
 }
 
 function buildContextOptions(storageStatePath) {
-  return {
-    viewport: { width: 1600, height: 900 },
+  const options = {
+    viewport: { width: 1440, height: 900 },
     locale: 'zh-CN',
     timezoneId: 'Asia/Shanghai',
-    storageState: storageStatePath,
   };
+
+  if (storageStatePath) {
+    options.storageState = storageStatePath;
+  }
+
+  return options;
+}
+
+async function isLoginFormVisible(page) {
+  const emailVisible = await page.locator('input[type="email"]').first().isVisible().catch(() => false);
+  const passwordVisible = await page.locator('input[type="password"]').first().isVisible().catch(() => false);
+  return emailVisible && passwordVisible;
+}
+
+async function loginIfNeeded(page, accountConfig) {
+  await page.waitForLoadState('networkidle', { timeout: 30000 }).catch(() => {});
+  await page.waitForTimeout(5000);
+
+  const atLoginPage = page.url().includes('/auth/login');
+  const loginFormVisible = await isLoginFormVisible(page);
+  if (!atLoginPage && !loginFormVisible) {
+    log('当前未检测到登录表单，默认复用已有登录态。', accountConfig);
+    return;
+  }
+
+  if (!accountConfig.email || !accountConfig.password) {
+    throw new Error('当前处于 Poi6 登录页，但未提供 POI6_EMAIL / POI6_PASSWORD，也没有可用登录态。');
+  }
+
+  log('检测到登录页，开始账号密码登录。', accountConfig);
+  await page.locator('input[type="email"]').first().fill(accountConfig.email, { timeout: 10000 });
+  await page.locator('input[type="password"]').first().fill(accountConfig.password, { timeout: 10000 });
+
+  const rememberLocator = page.locator('input[name="remember"]').first();
+  const rememberExists = (await rememberLocator.count().catch(() => 0)) > 0;
+  if (rememberExists) {
+    const checked = await rememberLocator.isChecked().catch(() => false);
+    if (accountConfig.rememberLogin && !checked) {
+      await rememberLocator.check({ force: true }).catch(() => {});
+    }
+    if (!accountConfig.rememberLogin && checked) {
+      await rememberLocator.uncheck({ force: true }).catch(() => {});
+    }
+  }
+
+  const loginButton = page.locator('button').filter({ hasText: /登入|login/i }).first();
+  await loginButton.click({ timeout: 10000 });
+  await page.waitForLoadState('networkidle', { timeout: 30000 }).catch(() => {});
+  await page.waitForTimeout(5000);
+
+  if (await isLoginFormVisible(page)) {
+    throw new Error('提交登录后仍停留在登录页，请检查账号密码是否正确，或站点是否出现额外验证。');
+  }
+
+  log('Poi6 登录成功，开始保持在线。', accountConfig);
 }
 
 async function runSingleAccount(accountConfig) {
@@ -134,29 +194,31 @@ async function runSingleAccount(accountConfig) {
   const page = await context.newPage();
 
   try {
-    log(`打开雀魂网页版：${accountConfig.baseUrl}`, accountConfig);
+    log(`打开 Poi6：${accountConfig.baseUrl}`, accountConfig);
     await page.goto(accountConfig.baseUrl, { waitUntil: 'domcontentloaded', timeout: accountConfig.timeoutMs });
-    log(`已恢复登录态，开始固定等待 ${accountConfig.hallWaitMs}ms，让页面完成读条并进入大厅。`, accountConfig);
-    await page.waitForTimeout(accountConfig.hallWaitMs);
+    await loginIfNeeded(page, accountConfig);
+
+    log(`开始固定在线 ${accountConfig.onlineWaitMs}ms，用于触发 Poi6 每日在线签到。`, accountConfig);
+    await page.waitForTimeout(accountConfig.onlineWaitMs);
 
     await saveStorageState(context, accountConfig.storageStatePath, log, accountConfig);
-    const screenshotPath = await takeScreenshot(page, SCREENSHOT_DIR, accountConfig.screenshotPrefix, 'hall-final', log, accountConfig);
+    const screenshotPath = await takeScreenshot(page, SCREENSHOT_DIR, accountConfig.screenshotPrefix, 'poi6-online-final', log, accountConfig);
     const barkBody = [
       `账号：${accountConfig.name}`,
-      `固定等待：${formatMinutes(accountConfig.hallWaitMs)} 分钟`,
-      '请以最终截图为准，手动确认月卡是否已自动到账。',
+      `在线时长：${formatMinutes(accountConfig.onlineWaitMs)} 分钟`,
+      'Poi6 已完成固定在线时长，请以最终截图为准确认积分是否到账。',
       `截图：${screenshotPath}`,
     ].join('\n');
 
-    await pushBarkNotification(accountConfig, `雀魂月卡巡检完成：${accountConfig.name}`, barkBody, screenshotPath, log).catch((error) => {
+    await pushBarkNotification(accountConfig, `Poi6 在线签到完成：${accountConfig.name}`, barkBody, screenshotPath, log).catch((error) => {
       log(`Bark 推送失败：${error.message}`, accountConfig);
     });
 
-    log('任务结束：已完成固定等待并生成最终截图。', accountConfig);
+    log('任务结束：已完成 Poi6 登录并保持在线。', accountConfig);
   } catch (error) {
     let screenshotPath = '';
     try {
-      screenshotPath = await takeScreenshot(page, SCREENSHOT_DIR, accountConfig.screenshotPrefix, 'claim-error', log, accountConfig);
+      screenshotPath = await takeScreenshot(page, SCREENSHOT_DIR, accountConfig.screenshotPrefix, 'poi6-login-error', log, accountConfig);
     } catch {
       // ignore screenshot errors
     }
@@ -167,7 +229,7 @@ async function runSingleAccount(accountConfig) {
       screenshotPath ? `截图：${screenshotPath}` : '截图：未成功生成',
     ].join('\n');
 
-    await pushBarkNotification(accountConfig, `雀魂月卡巡检失败：${accountConfig.name}`, barkBody, screenshotPath, log).catch((pushError) => {
+    await pushBarkNotification(accountConfig, `Poi6 在线签到失败：${accountConfig.name}`, barkBody, screenshotPath, log).catch((pushError) => {
       log(`Bark 推送失败：${pushError.message}`, accountConfig);
     });
 
@@ -179,7 +241,7 @@ async function runSingleAccount(accountConfig) {
 
 async function main() {
   const accounts = loadAccountsConfig();
-  log(`本次共需处理 ${accounts.length} 个账号。`);
+  log(`本次共需处理 ${accounts.length} 个 Poi6 账号。`);
 
   const results = [];
 
@@ -202,7 +264,7 @@ async function main() {
 
   if (failed.length > 0) {
     const summary = failed.map((item) => `${item.name}（${item.error.message}）`).join('；');
-    throw new Error(`以下账号执行失败：${summary}`);
+    throw new Error(`以下 Poi6 账号执行失败：${summary}`);
   }
 }
 
